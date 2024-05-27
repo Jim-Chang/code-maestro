@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "code-maestro"
+version = "0.1.0"
+description = ""
+authors = ["Jim <jim@koding.work>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.11.6"
+gradio = "^4.31.5"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.4.2"
+watchdog = "^4.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
