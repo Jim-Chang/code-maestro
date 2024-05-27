@@ -13,6 +13,8 @@ APP_CSS = """
 
 def main():
     with gr.Blocks(css=APP_CSS) as app:
+        app.title = "CodeMaestro"
+
         with gr.Tab("Chat"):
             layout_chat_tab()
 
