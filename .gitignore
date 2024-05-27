@@ -33,3 +33,5 @@ test_data/
 
 # macOS
 .DS_Store
+code_base
+settings.json
