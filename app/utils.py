@@ -15,25 +15,32 @@ state = {
     "api_key": "",
     "model": "",
     "temperature": 0.3,
-    "all_file_contents": "",
+    "all_file_contents_prompt": None,
+    "repo_url": "",
+    "branch": "default",
+    "file_extensions": [],
 }
 
 
 def init_state():
     global state
     settings = read_settings()
-    set_model_settings_to_state(
-        settings.get("api_key", ""),
-        settings.get("model", ""),
-        settings.get("temperature", 0),
+
+    update_state(
+        {
+            "api_key": settings.get("api_key", ""),
+            "model": settings.get("model", ""),
+            "temperature": settings.get("temperature", 0),
+            "repo_url": settings.get("repo_url", ""),
+            "branch": settings.get("branch", "default"),
+            "file_extensions": settings.get("file_extensions", []),
+        }
     )
 
 
-def set_model_settings_to_state(api_key, model, temperature):
+def update_state(data):
     global state
-    state["api_key"] = api_key
-    state["model"] = model
-    state["temperature"] = temperature
+    state.update(data)
 
 
 def init_google_genai():
@@ -110,4 +117,5 @@ def combine_code_base_and_upload_to_gemini(file_extensions):
     all_file_contents_prompt = genai.upload_file(
         os.path.join(target_dir, "all_file_contents.txt")
     )
+    state["all_file_contents_prompt"] = all_file_contents_prompt
     print("Source code uploaded to Gemini successfully!")
