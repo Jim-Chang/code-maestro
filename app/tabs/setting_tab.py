@@ -42,17 +42,9 @@ def _layout_model_setting():
     save_button = gr.Button("Save Settings")
 
     save_button.click(
-        lambda: (gr.update(interactive=False), "Saving..."),
-        [],
-        [save_button, progress_text],
-    ).then(
-        _update_model_settings,
+        _on_click_model_settings,
         [api_key, model, temperature],
-        [],
-    ).then(
-        lambda: (gr.update(interactive=True), "Done!"),
-        [],
-        [save_button, progress_text],
+        [progress_text],
     )
 
 
@@ -79,51 +71,14 @@ def _layout_repo_setting():
     progress_text = gr.Markdown()
     save_button = gr.Button("Use Repository For Chat")
 
-    (
-        save_button.click(
-            lambda: (gr.update(interactive=False), "Clone Repo..."),
-            [],
-            [save_button, progress_text],
-        )
-        .then(
-            _update_repo_settings,
-            [repo_url, branch, file_extensions],
-            [],
-        )
-        .then(
-            clone_repo_with_branch,
-            [repo_url, branch],
-            [],
-        )
-        .then(
-            lambda: "Init Submodules...",
-            [],
-            [progress_text],
-        )
-        .then(
-            init_submodules,
-            [],
-            [],
-        )
-        .then(
-            lambda: "Prepare for chat...",
-            [],
-            [progress_text],
-        )
-        .then(
-            combine_code_base_and_upload_to_gemini,
-            [file_extensions],
-            [],
-        )
-        .then(
-            lambda: (gr.update(interactive=True), "Done!"),
-            [],
-            [save_button, progress_text],
-        )
+    save_button.click(
+        _on_click_save_repo_handler,
+        [repo_url, branch, file_extensions],
+        [progress_text],
     )
 
 
-def _update_model_settings(api_key, model, temperature):
+def _on_click_model_settings(api_key, model, temperature):
     data = {
         "api_key": api_key,
         "model": model,
@@ -131,6 +86,15 @@ def _update_model_settings(api_key, model, temperature):
     }
     update_state(data)
     init_google_genai()
+    return "Done!"
+
+
+def _on_click_save_repo_handler(repo_url, branch, file_extensions):
+    _update_repo_settings(repo_url, branch, file_extensions)
+    clone_repo_with_branch(repo_url, branch)
+    init_submodules()
+    combine_code_base_and_upload_to_gemini(file_extensions)
+    return "Done!"
 
 
 def _update_repo_settings(repo_url, branch, file_extensions):
