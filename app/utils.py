@@ -7,7 +7,7 @@ import subprocess
 import google.generativeai as genai
 from git import Repo
 
-SETTING_FILE = "settings.json"
+STATE_FILE = "state.json"
 REPO_DIR = "code_base"
 PARENT_DIR = pathlib.Path(__file__).resolve().parent.parent
 
@@ -17,54 +17,34 @@ state = {
     "temperature": 0.3,
     "all_file_contents_prompt": None,
     "repo_url": "",
+    "repo_url_options": [],
     "branch": "default",
     "file_extensions": [],
 }
 
 
-def init_state():
+def load_state():
     global state
-    settings = read_settings()
+    if os.path.exists(os.path.join(PARENT_DIR, STATE_FILE)):
+        with open(os.path.join(PARENT_DIR, STATE_FILE), "r") as f:
+            data = json.loads(f.read())
+            state.update(data)
 
-    update_state(
-        {
-            "api_key": settings.get("api_key", ""),
-            "model": settings.get("model", ""),
-            "temperature": settings.get("temperature", 0),
-            "repo_url": settings.get("repo_url", ""),
-            "branch": settings.get("branch", "default"),
-            "file_extensions": settings.get("file_extensions", []),
-        }
-    )
+
+def save_state():
+    with open(STATE_FILE, "w") as f:
+        f.write(json.dumps(state))
 
 
 def update_state(data):
     global state
     state.update(data)
+    save_state()
 
 
 def init_google_genai():
     if state["api_key"]:
         genai.configure(api_key=state["api_key"])
-
-
-def read_settings():
-    _ensure_settings()
-    with open(SETTING_FILE, "r") as f:
-        return json.loads(f.read())
-
-
-def save_settings(data):
-    old_setting = read_settings()
-    old_setting.update(data)
-    with open(SETTING_FILE, "w") as f:
-        f.write(json.dumps(old_setting))
-
-
-def _ensure_settings():
-    if not os.path.exists(SETTING_FILE):
-        with open(SETTING_FILE, "w") as f:
-            f.write("{}")
 
 
 def clone_repo_with_branch(repo_url, branch):

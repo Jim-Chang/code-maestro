@@ -1,8 +1,6 @@
 import gradio as gr
 
 from app.utils import (
-    read_settings,
-    save_settings,
     clone_repo_with_branch,
     init_submodules,
     combine_code_base_and_upload_to_gemini,
@@ -17,16 +15,16 @@ FILE_EXTENSION_OPTIONS = ["py", "js", "ts", "tsx", "json"]
 
 
 def layout():
-    settings = read_settings()
     gr.Row(
         [
-            _layout_model_setting(settings),
-            _layout_repo_setting(settings),
+            _layout_model_setting(),
+            _layout_repo_setting(),
         ]
     )
 
 
-def _layout_model_setting(settings):
+def _layout_model_setting():
+    print("_layout_model_setting", state)
     gr.Markdown("# Model Setting")
     api_key = gr.Textbox(label="API Key", value=state["api_key"])
 
@@ -59,11 +57,11 @@ def _layout_model_setting(settings):
     )
 
 
-def _layout_repo_setting(settings):
+def _layout_repo_setting():
     gr.Markdown("# Repository Setting")
 
     repo_url = gr.Dropdown(
-        choices=settings.get("repo_url_options", []),
+        choices=state.get("repo_url_options", []),
         label="Select a Repository",
         allow_custom_value=True,
         value=state["repo_url"],
@@ -132,30 +130,20 @@ def _update_model_settings(api_key, model, temperature):
         "model": model,
         "temperature": temperature,
     }
-    save_settings(data)
     update_state(data)
     init_google_genai()
 
 
 def _update_repo_settings(repo_url, branch, file_extensions):
-    if repo_url is None:
-        print("repo_url is None")
-        return
-
     data = {
-        "repo_url": repo_url,
         "branch": branch,
         "file_extensions": file_extensions,
     }
 
-    settings = read_settings()
-    if "repo_url_options" not in settings:
-        settings["repo_url_options"] = []
+    if repo_url:
+        data["repo_url"] = repo_url
 
-    if repo_url not in settings["repo_url_options"]:
-        settings["repo_url_options"].append(repo_url)
-
-    settings.update(data)
-    save_settings(settings)
+        if repo_url not in state["repo_url_options"]:
+            state["repo_url_options"].append(repo_url)
 
     update_state(data)
