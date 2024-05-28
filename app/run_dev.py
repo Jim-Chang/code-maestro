@@ -16,9 +16,11 @@ class ChangeHandler(FileSystemEventHandler):
         self.process = subprocess.Popen(["python", "app/main.py"])
 
     def on_modified(self, event):
-        if event.src_path.endswith(".py"):
-            print(f"{event.src_path} has been modified. Restarting app...")
-            self.start_server()
+        if "code_base" in event.src_path or not event.src_path.endswith(".py"):
+            return
+
+        print(f"{event.src_path} has been modified. Restarting app...")
+        self.start_server()
 
 
 if __name__ == "__main__":
