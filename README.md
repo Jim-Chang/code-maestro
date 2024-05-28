@@ -29,3 +29,12 @@ poetry run pre-commit install
 ```bash
 ./start.sh
 ```
+
+## Run dev server
+
+```
+# Initialize python path
+source set-python-path.sh
+# start dev server
+python app/run_dev.py
+```
