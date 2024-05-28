@@ -9,20 +9,22 @@ def layout():
     chatbot = gr.Chatbot(elem_id="chatbot", show_label=False)
     message = gr.Textbox(placeholder="Type your message here...", show_label=False)
 
-    message.submit(submit_message, [message, chatbot], [message, chatbot]).then()
+    message.submit(
+        _submit_message, [message, chatbot], [message, chatbot], queue=False
+    ).then(
+        _streaming_llm_response,
+        [message, chatbot],
+        chatbot,
+    )
 
 
-def submit_message(user_input, history):
+def _submit_message(user_input, history):
     history = history or []
-
-    print("generating with user_input:", user_input)
-    response = get_llm_response(user_input, history)
-
-    history.append((user_input, response))
+    history.append((user_input, None))
     return "", history
 
 
-def get_llm_response(user_input, history):
+def _streaming_llm_response(user_input, history):
     code_prompts = _prepare_code_prompts()
 
     model = _prepare_model()
@@ -38,8 +40,10 @@ def get_llm_response(user_input, history):
         f"user:\n{user_input}",
     ]
 
-    response = model.generate_content(prompt_parts)
-    return response.text
+    response = model.generate_content(prompt_parts, stream=True)
+    for chunk in response:
+        history[-1][1] = (history[-1][1] or "") + chunk.text
+        yield history
 
 
 def _prepare_code_prompts():
