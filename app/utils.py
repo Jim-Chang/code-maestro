@@ -59,12 +59,11 @@ def clone_repo_with_branch(repo_url, branch):
         print("Removing existing repo...")
         shutil.rmtree(target_dir)
 
-    print("Cloning repo...")
-    repo = Repo.clone_from(repo_url, target_dir, depth=1)
-
+    print(f"Cloning repo with branch {branch}...")
     if branch != "default":
-        print(f"Checking out to branch {branch}...")
-        repo.git.checkout(branch)
+        Repo.clone_from(repo_url, target_dir, depth=1, branch=branch)
+    else:
+        Repo.clone_from(repo_url, target_dir, depth=1)
 
 
 def init_submodules():

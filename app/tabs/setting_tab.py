@@ -60,6 +60,7 @@ def _layout_repo_setting():
     branch = gr.Dropdown(
         choices=BRANCH_OPTIONS,
         value=state["branch"],
+        allow_custom_value=True,
         label="Select a Branch",
     )
     file_extensions = gr.CheckboxGroup(
