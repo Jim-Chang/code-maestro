@@ -18,6 +18,12 @@ poetry env use 3.11.6
 poetry install
 ```
 
+## Install pre-commit hooks
+
+```bash
+poetry run pre-commit install
+```
+
 ## Run server
 
 ```bash
