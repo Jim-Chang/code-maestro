@@ -4,6 +4,7 @@ import pathlib
 import shutil
 import subprocess
 
+import google.generativeai as genai
 from git import Repo
 
 SETTING_FILE = "settings.json"
@@ -13,7 +14,7 @@ PARENT_DIR = pathlib.Path(__file__).resolve().parent.parent
 state = {
     "api_key": "",
     "model": "",
-    "temperature": 0,
+    "temperature": 0.3,
     "all_file_contents": "",
 }
 
@@ -33,6 +34,11 @@ def set_model_settings_to_state(api_key, model, temperature):
     state["api_key"] = api_key
     state["model"] = model
     state["temperature"] = temperature
+
+
+def init_google_genai():
+    if state["api_key"]:
+        genai.configure(api_key=state["api_key"])
 
 
 def read_settings():
@@ -101,7 +107,7 @@ def combine_code_base_and_upload_to_gemini(file_extensions):
     with open(os.path.join(target_dir, "all_file_contents.txt"), "w") as f:
         f.write(all_file_contents)
 
-    # all_file_contents_prompt = genai.upload_file(
-    #     os.path.join(target_dir, "all_file_contents.txt")
-    # )
+    all_file_contents_prompt = genai.upload_file(
+        os.path.join(target_dir, "all_file_contents.txt")
+    )
     print("Source code uploaded to Gemini successfully!")

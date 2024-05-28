@@ -2,6 +2,7 @@ import gradio as gr
 
 from app.tabs.chat_tab import layout as layout_chat_tab
 from app.tabs.setting_tab import layout as layout_setting_tab
+from app.utils import init_state, init_google_genai
 
 APP_CSS = """
 #chatbot {
@@ -12,6 +13,9 @@ APP_CSS = """
 
 
 def main():
+    init_state()
+    init_google_genai()
+
     with gr.Blocks(css=APP_CSS) as app:
         app.title = "CodeMaestro"
 

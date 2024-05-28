@@ -7,6 +7,8 @@ from app.utils import (
     clone_repo_with_branch,
     init_submodules,
     combine_code_base_and_upload_to_gemini,
+    init_google_genai,
+    state,
 )
 
 MODEL_OPTIONS = ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"]
@@ -26,23 +28,34 @@ def layout():
 
 def _layout_model_setting(settings):
     gr.Markdown("# Model Setting")
-    api_key = gr.Textbox(label="API Key")
+    api_key = gr.Textbox(label="API Key", value=state["api_key"])
 
-    model = gr.Dropdown(choices=MODEL_OPTIONS, label="Select a Model")
+    model = gr.Dropdown(
+        choices=MODEL_OPTIONS, label="Select a Model", value=state["model"]
+    )
     temperature = gr.Slider(
         label="Temperature",
         minimum=0,
         maximum=1,
-        value=0.3,
+        value=state["temperature"],
         step=0.05,
     )
 
+    progress_text = gr.Markdown()
     save_button = gr.Button("Save Settings")
 
     save_button.click(
+        lambda: (gr.update(interactive=False), "Saving..."),
+        [],
+        [save_button, progress_text],
+    ).then(
         _update_model_settings,
         [api_key, model, temperature],
         [],
+    ).then(
+        lambda: (gr.update(interactive=True), "Done!"),
+        [],
+        [save_button, progress_text],
     )
 
 
@@ -117,6 +130,7 @@ def _update_model_settings(api_key, model, temperature):
         }
     )
     set_model_settings_to_state(api_key, model, temperature)
+    init_google_genai()
 
 
 def _add_to_repo_url_options(repo_url):
