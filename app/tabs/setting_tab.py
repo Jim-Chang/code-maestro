@@ -37,13 +37,17 @@ def _layout_model_setting():
         value=state["temperature"],
         step=0.05,
     )
+    system_message = gr.Textbox(
+        label="System Message",
+        value=state["system_message"],
+    )
 
     progress_text = gr.Markdown()
     save_button = gr.Button("Save Settings")
 
     save_button.click(
         _on_click_model_settings,
-        [api_key, model, temperature],
+        [api_key, model, temperature, system_message],
         [progress_text],
     )
 
@@ -79,11 +83,12 @@ def _layout_repo_setting():
     )
 
 
-def _on_click_model_settings(api_key, model, temperature):
+def _on_click_model_settings(api_key, model, temperature, system_message):
     data = {
         "api_key": api_key,
         "model": model,
         "temperature": temperature,
+        "system_message": system_message,
     }
     update_state(data)
     init_google_genai()

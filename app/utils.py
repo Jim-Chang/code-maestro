@@ -10,6 +10,7 @@ from git import Repo
 STATE_FILE = "state.json"
 REPO_DIR = "code_base"
 PARENT_DIR = pathlib.Path(__file__).resolve().parent.parent
+DEFAULT_SYS_MSG = "你是一個資深的軟體工程師，精通 typescript, javascript, python，依照提供的程式碼，詳細解答使用者的問題。使用繁體中文回覆。"
 
 state = {
     "api_key": "",
@@ -20,6 +21,7 @@ state = {
     "repo_url_options": [],
     "branch": "default",
     "file_extensions": [],
+    "system_message": DEFAULT_SYS_MSG,
 }
 
 

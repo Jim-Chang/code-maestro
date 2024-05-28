@@ -23,10 +23,9 @@ def submit_message(user_input, history):
 
 
 def get_llm_response(user_input, history):
-    system_message = _prepare_system_message()
     code_prompts = _prepare_code_prompts()
 
-    model = _prepare_model(system_message)
+    model = _prepare_model()
 
     message_history = []
     for user_msg, ai_msg in history:
@@ -43,10 +42,6 @@ def get_llm_response(user_input, history):
     return response.text
 
 
-def _prepare_system_message():
-    return "你是一個資深的軟體工程師，精通 typescript, javascript, python，依照提供的程式碼，解答使用者的問題"
-
-
 def _prepare_code_prompts():
     return [
         "程式碼是由多個檔案組成，每份檔案的內容由 code block 包夾，每個 code block 起始處前一行會提供該檔案的路徑與檔名，回覆時請務必依照檔案對應的檔名提供給使用者",
@@ -56,7 +51,7 @@ def _prepare_code_prompts():
     ]
 
 
-def _prepare_model(system_message):
+def _prepare_model():
     generation_config = {
         "temperature": state["temperature"],
         "top_p": 1,
@@ -75,5 +70,5 @@ def _prepare_model(system_message):
         model_name=state["model"],
         generation_config=generation_config,
         safety_settings=safety_settings,
-        system_instruction=system_message,
+        system_instruction=state["system_message"],
     )
