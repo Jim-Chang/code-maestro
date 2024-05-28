@@ -10,22 +10,20 @@ def layout():
     chatbot = gr.Chatbot(elem_id="chatbot", show_label=False)
 
     message = gr.Textbox(placeholder="Type your message here...", show_label=False)
-    clear_history = gr.Button("Clear Chat History")
+    clear_btn = gr.ClearButton([chatbot, message])
 
     (
         message.submit(
             _on_submit_message, [message, chatbot], [message, chatbot], queue=False
         )
-        .success(lambda: [_disable(), _disable()], [], [message, clear_history])
+        .success(lambda: [_disable(), _disable()], [], [message, clear_btn])
         .then(
             _streaming_llm_response,
             [message, chatbot],
             chatbot,
         )
-        .then(lambda: [_enable(), _enable()], [], [message, clear_history])
+        .then(lambda: [_enable(), _enable()], [], [message, clear_btn])
     )
-
-    clear_history.click(_on_clear_history, [], [chatbot])
 
 
 def _disable():
@@ -34,10 +32,6 @@ def _disable():
 
 def _enable():
     return gr.update(interactive=True)
-
-
-def _on_clear_history():
-    return []
 
 
 def _on_submit_message(user_input, history):
