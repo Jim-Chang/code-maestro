@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import shutil
+import subprocess
 
 from git import Repo
 
@@ -53,7 +54,7 @@ def _ensure_settings():
             f.write("{}")
 
 
-def clone_repo(repo_url, branch):
+def clone_repo_with_branch(repo_url, branch):
     target_dir = os.path.join(PARENT_DIR, REPO_DIR)
 
     if os.path.exists(target_dir):
@@ -67,9 +68,40 @@ def clone_repo(repo_url, branch):
         print(f"Checking out to branch {branch}...")
         repo.git.checkout(branch)
 
-    print("Initializing submodules...")
-    repo.git.submodule("init")
-    repo.git.submodule("update")
-    repo.git.pull()
 
-    print("Repo cloned successfully!")
+def init_submodules():
+    target_dir = os.path.join(PARENT_DIR, REPO_DIR)
+    subprocess.run(
+        ["git", "submodule", "update", "--init", "--depth", "1"], cwd=target_dir
+    )
+    print("Submodules initialized successfully!")
+
+
+def combine_code_base_and_upload_to_gemini(file_extensions):
+    print("Combining source code and uploading to Gemini...")
+    print(file_extensions)
+    target_dir = os.path.join(PARENT_DIR, REPO_DIR)
+
+    all_file_contents = ""
+
+    for root, dirs, files in os.walk(target_dir):
+        for file in files:
+            if any(file.endswith(ext) for ext in file_extensions):
+                file_path = os.path.join(root, file)
+                relative_file_path = os.path.relpath(file_path, target_dir)
+
+                with open(file_path, "r") as f:
+                    file_content = f.read()
+
+                all_file_contents += f"# Source File Path: {relative_file_path}\n"
+                all_file_contents += "```\n"
+                all_file_contents += file_content
+                all_file_contents += "\n```\n"
+
+    with open(os.path.join(target_dir, "all_file_contents.txt"), "w") as f:
+        f.write(all_file_contents)
+
+    # all_file_contents_prompt = genai.upload_file(
+    #     os.path.join(target_dir, "all_file_contents.txt")
+    # )
+    print("Source code uploaded to Gemini successfully!")

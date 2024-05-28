@@ -4,12 +4,24 @@ from app.utils import (
     read_settings,
     save_settings,
     set_model_settings_to_state,
-    clone_repo,
+    clone_repo_with_branch,
+    init_submodules,
+    combine_code_base_and_upload_to_gemini,
 )
 
 MODEL_OPTIONS = ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"]
 BRANCH_OPTIONS = ["default", "master", "main", "stage", "develop"]
 FILE_EXTENSION_OPTIONS = ["py", "js", "ts", "tsx", "json"]
+
+
+def layout():
+    settings = read_settings()
+    gr.Row(
+        [
+            _layout_model_setting(settings),
+            _layout_repo_setting(settings),
+        ]
+    )
 
 
 def _layout_model_setting(settings):
@@ -49,22 +61,50 @@ def _layout_repo_setting(settings):
         choices=FILE_EXTENSION_OPTIONS, label="Select File Extensions for AI Model"
     )
 
+    progress_text = gr.Markdown()
     save_button = gr.Button("Use Repository For Chat")
 
-    save_button.click(
-        _update_repo_settings,
-        [repo_url, branch, file_extensions],
-        [],
-    )
-
-
-def layout():
-    settings = read_settings()
-    gr.Row(
-        [
-            _layout_model_setting(settings),
-            _layout_repo_setting(settings),
-        ]
+    (
+        save_button.click(
+            lambda: (gr.update(interactive=False), "Clone Repo..."),
+            [],
+            [save_button, progress_text],
+        )
+        .then(
+            _add_to_repo_url_options,
+            [repo_url],
+            [],
+        )
+        .then(
+            clone_repo_with_branch,
+            [repo_url, branch],
+            [],
+        )
+        .then(
+            lambda: "Init Submodules...",
+            [],
+            [progress_text],
+        )
+        .then(
+            init_submodules,
+            [],
+            [],
+        )
+        .then(
+            lambda: "Prepare for chat...",
+            [],
+            [progress_text],
+        )
+        .then(
+            combine_code_base_and_upload_to_gemini,
+            [file_extensions],
+            [],
+        )
+        .then(
+            lambda: (gr.update(interactive=True), "Done!"),
+            [],
+            [save_button, progress_text],
+        )
     )
 
 
@@ -79,16 +119,11 @@ def _update_model_settings(api_key, model, temperature):
     set_model_settings_to_state(api_key, model, temperature)
 
 
-def _update_repo_settings(repo_url, branch, file_extensions, progress=gr.Progress()):
-    print("in _update_repo_settings")
-    _add_to_repo_url_options(repo_url)
-
-    progress(0.5)
-    clone_repo(repo_url, branch)
-    progress(1)
-
-
 def _add_to_repo_url_options(repo_url):
+    if repo_url is None:
+        print("repo_url is None")
+        return
+
     settings = read_settings()
     if "repo_url_options" not in settings:
         settings["repo_url_options"] = []
