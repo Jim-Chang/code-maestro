@@ -6,19 +6,28 @@ from app.utils import state
 
 def layout():
     gr.Markdown("# CodeMaestro")
+
     chatbot = gr.Chatbot(elem_id="chatbot", show_label=False)
+
     message = gr.Textbox(placeholder="Type your message here...", show_label=False)
+    clear_history = gr.Button("Clear Chat History")
 
     message.submit(
-        _submit_message, [message, chatbot], [message, chatbot], queue=False
+        _on_submit_message, [message, chatbot], [message, chatbot], queue=False
     ).then(
         _streaming_llm_response,
         [message, chatbot],
         chatbot,
     )
 
+    clear_history.click(_on_clear_history, [], [chatbot])
 
-def _submit_message(user_input, history):
+
+def _on_clear_history():
+    return []
+
+
+def _on_submit_message(user_input, history):
     history = history or []
     history.append((user_input, None))
     return "", history

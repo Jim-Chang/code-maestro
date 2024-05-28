@@ -15,12 +15,8 @@ FILE_EXTENSION_OPTIONS = ["py", "js", "ts", "tsx", "json"]
 
 
 def layout():
-    gr.Row(
-        [
-            _layout_model_setting(),
-            _layout_repo_setting(),
-        ]
-    )
+    _layout_model_setting()
+    _layout_repo_setting()
 
 
 def _layout_model_setting():

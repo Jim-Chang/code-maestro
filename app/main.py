@@ -6,7 +6,7 @@ from app.utils import init_google_genai, load_state
 
 APP_CSS = """
 #chatbot {
-    height: calc(100vh - 300px) !important;
+    height: calc(100vh - 350px) !important;
     overflow-y: auto !important;
 }
 """
