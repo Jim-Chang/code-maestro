@@ -12,15 +12,28 @@ def layout():
     message = gr.Textbox(placeholder="Type your message here...", show_label=False)
     clear_history = gr.Button("Clear Chat History")
 
-    message.submit(
-        _on_submit_message, [message, chatbot], [message, chatbot], queue=False
-    ).then(
-        _streaming_llm_response,
-        [message, chatbot],
-        chatbot,
+    (
+        message.submit(
+            _on_submit_message, [message, chatbot], [message, chatbot], queue=False
+        )
+        .success(lambda: [_disable(), _disable()], [], [message, clear_history])
+        .then(
+            _streaming_llm_response,
+            [message, chatbot],
+            chatbot,
+        )
+        .then(lambda: [_enable(), _enable()], [], [message, clear_history])
     )
 
     clear_history.click(_on_clear_history, [], [chatbot])
+
+
+def _disable():
+    return gr.update(interactive=False)
+
+
+def _enable():
+    return gr.update(interactive=True)
 
 
 def _on_clear_history():
@@ -29,6 +42,10 @@ def _on_clear_history():
 
 def _on_submit_message(user_input, history):
     history = history or []
+
+    if state["all_file_contents_prompt"] is None:
+        raise gr.Error("Please select a repository first.")
+
     history.append((user_input, None))
     return "", history
 
@@ -49,6 +66,7 @@ def _streaming_llm_response(user_input, history):
         f"user:\n{user_input}",
     ]
 
+    print("Start generating content...")
     response = model.generate_content(prompt_parts, stream=True)
     for chunk in response:
         history[-1][1] = (history[-1][1] or "") + chunk.text

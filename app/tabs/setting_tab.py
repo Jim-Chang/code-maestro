@@ -80,6 +80,12 @@ def _layout_repo_setting():
 
 
 def _on_click_model_settings(api_key, model, temperature, system_message):
+    if not api_key:
+        raise gr.Error("API Key is required!")
+
+    if not system_message:
+        raise gr.Error("System Message is required!")
+
     data = {
         "api_key": api_key,
         "model": model,
@@ -92,6 +98,15 @@ def _on_click_model_settings(api_key, model, temperature, system_message):
 
 
 def _on_click_save_repo_handler(repo_url, branch, file_extensions):
+    if not repo_url:
+        raise gr.Error("Repository URL is required!")
+
+    if not branch:
+        raise gr.Error("Branch is required!")
+
+    if not file_extensions:
+        raise gr.Error("File Extensions is required!")
+
     _update_repo_settings(repo_url, branch, file_extensions)
     clone_repo_with_branch(repo_url, branch)
     init_submodules()
