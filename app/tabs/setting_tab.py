@@ -24,7 +24,6 @@ def layout():
 
 
 def _layout_model_setting():
-    print("_layout_model_setting", state)
     gr.Markdown("# Model Setting")
     api_key = gr.Textbox(label="API Key", value=state["api_key"])
 

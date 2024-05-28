@@ -14,6 +14,8 @@ def layout():
 
 def submit_message(user_input, history):
     history = history or []
+
+    print("generating with user_input:", user_input)
     response = get_llm_response(user_input, history)
 
     history.append((user_input, response))

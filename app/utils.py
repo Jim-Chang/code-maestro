@@ -13,7 +13,7 @@ PARENT_DIR = pathlib.Path(__file__).resolve().parent.parent
 
 state = {
     "api_key": "",
-    "model": "",
+    "model": "gemini-1.5-pro-latest",
     "temperature": 0.3,
     "all_file_contents_prompt": None,
     "repo_url": "",
@@ -27,13 +27,18 @@ def load_state():
     global state
     if os.path.exists(os.path.join(PARENT_DIR, STATE_FILE)):
         with open(os.path.join(PARENT_DIR, STATE_FILE), "r") as f:
-            data = json.loads(f.read())
-            state.update(data)
+            try:
+                data = json.loads(f.read())
+                state.update(data)
+            except json.JSONDecodeError:
+                pass
 
 
 def save_state():
     with open(STATE_FILE, "w") as f:
-        f.write(json.dumps(state))
+        data = state.copy()
+        del data["all_file_contents_prompt"]
+        f.write(json.dumps(data, indent=4))
 
 
 def update_state(data):
@@ -72,7 +77,6 @@ def init_submodules():
 
 def combine_code_base_and_upload_to_gemini(file_extensions):
     print("Combining source code and uploading to Gemini...")
-    print(file_extensions)
     target_dir = os.path.join(PARENT_DIR, REPO_DIR)
 
     all_file_contents = ""
