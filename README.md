@@ -38,3 +38,9 @@ source set-python-path.sh
 # start dev server
 python app/run_dev.py
 ```
+
+## Build by pyinstaller
+
+```
+./build.sh
+```
