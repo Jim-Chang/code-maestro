@@ -3,6 +3,8 @@ import gradio as gr
 
 from app.utils import state
 
+_is_interrupted = False
+
 
 def layout():
     gr.Markdown("# CodeMaestro")
@@ -10,11 +12,19 @@ def layout():
     chatbot = gr.Chatbot(elem_id="chatbot", show_label=False)
 
     message = gr.Textbox(placeholder="Type your message here...", show_label=False)
-    clear_btn = gr.ClearButton([chatbot, message])
+
+    with gr.Row():
+        with gr.Column(1):
+            clear_btn = gr.ClearButton([chatbot, message])
+        with gr.Column(1):
+            interrupt_btn = gr.Button("Stop", interactive=False)
 
     (
         message.submit(
-            _on_submit_message, [message, chatbot], [message, chatbot], queue=False
+            _on_submit_message,
+            [message, chatbot],
+            [message, chatbot, interrupt_btn],
+            queue=False,
         )
         .success(lambda: [_disable(), _disable()], [], [message, clear_btn])
         .then(
@@ -22,8 +32,14 @@ def layout():
             [message, chatbot],
             chatbot,
         )
-        .then(lambda: [_enable(), _enable()], [], [message, clear_btn])
+        .then(
+            lambda: [_enable(), _enable(), _disable()],
+            [],
+            [message, clear_btn, interrupt_btn],
+        )
     )
+
+    interrupt_btn.click(_on_click_interrupt, [], [interrupt_btn])
 
 
 def _disable():
@@ -34,6 +50,12 @@ def _enable():
     return gr.update(interactive=True)
 
 
+def _on_click_interrupt():
+    global _is_interrupted
+    _is_interrupted = True
+    return _disable()
+
+
 def _on_submit_message(user_input, history):
     history = history or []
 
@@ -41,10 +63,12 @@ def _on_submit_message(user_input, history):
         raise gr.Error("Please select a repository first.")
 
     history.append((user_input, None))
-    return "", history
+    return "", history, _enable()
 
 
 def _streaming_llm_response(user_input, history):
+    global _is_interrupted
+
     code_prompts = _prepare_code_prompts()
 
     model = _prepare_model()
@@ -60,9 +84,14 @@ def _streaming_llm_response(user_input, history):
         f"user:\n{user_input}",
     ]
 
+    print(f"User input: {user_input}")
     print("Start generating content...")
     response = model.generate_content(prompt_parts, stream=True)
     for chunk in response:
+        if _is_interrupted:
+            _is_interrupted = False
+            break
+
         history[-1][1] = (history[-1][1] or "") + chunk.text
         yield history
 
