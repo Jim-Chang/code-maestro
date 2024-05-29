@@ -29,7 +29,7 @@ def layout():
         .success(lambda: [_disable(), _disable()], [], [message, clear_btn])
         .then(
             _streaming_llm_response,
-            [message, chatbot],
+            [chatbot],
             chatbot,
         )
         .then(
@@ -66,15 +66,16 @@ def _on_submit_message(user_input, history):
     return "", history, _enable()
 
 
-def _streaming_llm_response(user_input, history):
+def _streaming_llm_response(history):
     global _is_interrupted
-
-    code_prompts = _prepare_code_prompts()
 
     model = _prepare_model()
 
+    user_input, _ = history[-1]
+    code_prompts = _prepare_code_prompts()
+
     message_history = []
-    for user_msg, ai_msg in history:
+    for user_msg, ai_msg in history[:-1]:
         message_history.append(f"user: {user_msg}")
         message_history.append(f"ai: {ai_msg}")
 
@@ -86,14 +87,18 @@ def _streaming_llm_response(user_input, history):
 
     print(f"User input: {user_input}")
     print("Start generating content...")
-    response = model.generate_content(prompt_parts, stream=True)
-    for chunk in response:
-        if _is_interrupted:
-            _is_interrupted = False
-            break
+    try:
+        response = model.generate_content(prompt_parts, stream=True)
+        for chunk in response:
+            if _is_interrupted:
+                _is_interrupted = False
+                break
+            history[-1][1] = (history[-1][1] or "") + chunk.text
+            yield history
 
-        history[-1][1] = (history[-1][1] or "") + chunk.text
-        yield history
+    except Exception as e:
+        print(f"Error: {e}")
+        raise gr.Error("An error occurred while generating content.")
 
 
 def _prepare_code_prompts():
