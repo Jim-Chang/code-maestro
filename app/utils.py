@@ -3,14 +3,17 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 
 import google.generativeai as genai
 from git import Repo
 
 STATE_FILE = "state.json"
 REPO_DIR = "code_base"
-PARENT_DIR = pathlib.Path(__file__).resolve().parent.parent
-DEFAULT_SYS_MSG = "你是一個資深的軟體工程師，精通 typescript, javascript, python，依照提供的程式碼，詳細解答使用者的問題。使用繁體中文回覆。"
+PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent
+DEFAULT_SYS_MSG = (
+    "你是一個資深的軟體工程師，精通 typescript, javascript, python，依照提供的程式碼，詳細解答使用者的問題。使用繁體中文回覆。"
+)
 
 state = {
     "api_key": "",
@@ -25,10 +28,24 @@ state = {
 }
 
 
+def is_packaged_by_pyinstaller():
+    return hasattr(sys, "_MEIPASS")
+
+
+def _get_state_file_path():
+    if is_packaged_by_pyinstaller():
+        home_dir = os.path.expanduser("~")
+        return os.path.join(home_dir, f".code_maestro.{STATE_FILE}")
+    else:
+        return os.path.join(PROJ_DIR, STATE_FILE)
+
+
 def load_state():
     global state
-    if os.path.exists(os.path.join(PARENT_DIR, STATE_FILE)):
-        with open(os.path.join(PARENT_DIR, STATE_FILE), "r") as f:
+    state_file_path = _get_state_file_path()
+
+    if os.path.exists(state_file_path):
+        with open(state_file_path, "r") as f:
             try:
                 data = json.loads(f.read())
                 state.update(data)
@@ -37,7 +54,9 @@ def load_state():
 
 
 def save_state():
-    with open(STATE_FILE, "w") as f:
+    state_file_path = _get_state_file_path()
+
+    with open(state_file_path, "w") as f:
         data = state.copy()
         del data["all_file_contents_prompt"]
         f.write(json.dumps(data, indent=4))
@@ -55,7 +74,7 @@ def init_google_genai():
 
 
 def clone_repo_with_branch(repo_url, branch):
-    target_dir = os.path.join(PARENT_DIR, REPO_DIR)
+    target_dir = os.path.join(PROJ_DIR, REPO_DIR)
 
     if os.path.exists(target_dir):
         print("Removing existing repo...")
@@ -69,7 +88,7 @@ def clone_repo_with_branch(repo_url, branch):
 
 
 def init_submodules():
-    target_dir = os.path.join(PARENT_DIR, REPO_DIR)
+    target_dir = os.path.join(PROJ_DIR, REPO_DIR)
     subprocess.run(
         ["git", "submodule", "update", "--init", "--depth", "1"], cwd=target_dir
     )
@@ -78,7 +97,7 @@ def init_submodules():
 
 def combine_code_base_and_upload_to_gemini(file_extensions):
     print("Combining source code and uploading to Gemini...")
-    target_dir = os.path.join(PARENT_DIR, REPO_DIR)
+    target_dir = os.path.join(PROJ_DIR, REPO_DIR)
 
     all_file_contents = ""
 
