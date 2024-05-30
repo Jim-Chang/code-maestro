@@ -87,14 +87,22 @@ def _streaming_llm_response(history):
 
     print(f"User input: {user_input}")
     print("Start generating content...")
+
     try:
         response = model.generate_content(prompt_parts, stream=True)
+        print("AI: ", end="")
+
         for chunk in response:
             if _is_interrupted:
                 _is_interrupted = False
                 break
+
+            print(chunk.text, end="")
+
             history[-1][1] = (history[-1][1] or "") + chunk.text
             yield history
+
+        print("\nContent generation completed.")
 
     except Exception as e:
         print(f"Error: {e}")
