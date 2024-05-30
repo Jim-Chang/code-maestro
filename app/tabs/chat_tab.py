@@ -103,10 +103,11 @@ def _streaming_llm_response(history):
 
 def _prepare_code_prompts():
     return [
-        "程式碼是由多個檔案組成，每份檔案的內容由 code block 包夾，每個 code block 起始處前一行會提供該檔案的路徑與檔名，回覆時請務必依照檔案對應的檔名提供給使用者",
+        "程式碼是由多個檔案組成，每份檔案的內容由 code block 包夾，每個 code block 起始處前一行會提供該檔案的路徑與檔名，回覆時若需提及程式碼所處原始檔位置，請務必依照檔案對應的檔名提供給使用者",
         "## Source Code Begin ##",
         state["all_file_contents_prompt"],
         "## Source Code End ##",
+        "回傳結果給使用者時，避免將檔案路徑寫於 code block 中，以免造成使用者無法正確閱讀",
     ]
 
 
