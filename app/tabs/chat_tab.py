@@ -118,7 +118,6 @@ def _streaming_llm_response(history):
 def _prepare_code_prompts():
     prompts = [
         "The original code documentation consists of several files. Each file's content is enclosed within code blocks, with the file path and name indicated at the beginning of each block. When referencing specific sections of the code, always include the file name and path to help users identify the source file accurately.",
-        "When returning the code to the user, if it is necessary to mention the file path, please include the file path within the code block. Each section of the code should have the corresponding file path and name at the beginning of the code block for clarity.",
         "<Source Code Begin>",
         state["all_file_contents_prompt"],
         "<Source Code End>",
