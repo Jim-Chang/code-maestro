@@ -12,7 +12,7 @@ STATE_FILE = "state.json"
 REPO_DIR = "code_base"
 PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent
 DEFAULT_SYS_MSG = (
-    "你是一個資深的軟體工程師，精通 typescript, javascript, python，依照提供的程式碼，詳細解答使用者的問題。使用繁體中文回覆。"
+    "You are a senior software engineer proficient in TypeScript, JavaScript, and Python. Based on the provided code, answer the user's questions in detail. Respond in Traditional Chinese."
 )
 
 state = {
@@ -110,10 +110,10 @@ def combine_code_base_and_upload_to_gemini(file_extensions):
                 with open(file_path, "r") as f:
                     file_content = f.read()
 
-                all_file_contents += f"# Source File Path: {relative_file_path}\n"
+                all_file_contents += f"### Source File Path: {relative_file_path} ###\n"
                 all_file_contents += "```\n"
                 all_file_contents += file_content
-                all_file_contents += "\n```\n"
+                all_file_contents += "\n```\n\n\n"
 
     with open(os.path.join(target_dir, "all_file_contents.txt"), "w") as f:
         f.write(all_file_contents)

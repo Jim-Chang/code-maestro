@@ -1,3 +1,4 @@
+from google.api_core import exceptions
 import google.generativeai as genai
 import gradio as gr
 
@@ -95,6 +96,7 @@ def _streaming_llm_response(history):
         for chunk in response:
             if _is_interrupted:
                 _is_interrupted = False
+                print("\nContent generation interrupted by user.")
                 break
 
             print(chunk.text, end="")
@@ -104,6 +106,10 @@ def _streaming_llm_response(history):
 
         print("\nContent generation completed.")
 
+    except exceptions.ResourceExhausted as e:
+        print(f"Error: {e}")
+        raise gr.Error("The model has run out of resources. Please try again later.")
+
     except Exception as e:
         print(f"Error: {e}")
         raise gr.Error("An error occurred while generating content.")
@@ -111,11 +117,11 @@ def _streaming_llm_response(history):
 
 def _prepare_code_prompts():
     return [
-        "程式碼是由多個檔案組成，每份檔案的內容由 code block 包夾，每個 code block 起始處前一行會提供該檔案的路徑與檔名，回覆時若需提及程式碼所處原始檔位置，請務必依照檔案對應的檔名提供給使用者",
-        "## Source Code Begin ##",
+        "The original code documentation consists of several files. Each file's content is enclosed within code blocks, with the file path and name indicated at the beginning of each block. When referencing specific sections of the code, always include the file name and path to help users identify the source file accurately.",
+        "When returning the code to the user, if it is necessary to mention the file path, please include the file path within the code block. Each section of the code should have the corresponding file path and name at the beginning of the code block for clarity.",
+        "<Source Code Begin>",
         state["all_file_contents_prompt"],
-        "## Source Code End ##",
-        "回傳結果給使用者時，避免將檔案路徑寫於 code block 中，以免造成使用者無法正確閱讀",
+        "<Source Code End>",
     ]
 
 
