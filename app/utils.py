@@ -59,10 +59,12 @@ def load_state():
 def save_state():
     state_file_path = _get_state_file_path()
 
+    data = state.copy()
+    del data["all_file_contents_prompt"]
+    del data["diff_content_prompt"]
+    del data["is_enable_diff"]
+
     with open(state_file_path, "w") as f:
-        data = state.copy()
-        del data["all_file_contents_prompt"]
-        del data["is_enable_diff"]
         f.write(json.dumps(data, indent=4))
 
 
@@ -98,11 +100,20 @@ def init_submodules():
     print("Submodules initialized successfully!")
 
 
+def is_repo_shallow():
+    target_dir = os.path.join(PROJ_DIR, REPO_DIR)
+    repo = Repo(target_dir)
+    return os.path.exists(os.path.join(repo.git_dir, "shallow"))
+
+
 def unshallow_repo():
     target_dir = os.path.join(PROJ_DIR, REPO_DIR)
     repo = Repo(target_dir)
-    repo.git.fetch("--unshallow")
-    print("Repo unshallowed successfully!")
+    if is_repo_shallow():
+        repo.git.fetch("--unshallow")
+        print("Repo unshallowed successfully!")
+    else:
+        print("Repo is not shallow, skipping unshallowing...")
 
 
 def fetch_branch(branch):
