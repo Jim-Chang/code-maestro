@@ -11,20 +11,23 @@ from git import Repo
 STATE_FILE = "state.json"
 REPO_DIR = "code_base"
 PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent
-DEFAULT_SYS_MSG = (
-    "You are a senior software engineer proficient in TypeScript, JavaScript, and Python. Based on the provided code, answer the user's questions in detail. Respond in Traditional Chinese."
-)
+DEFAULT_SYS_MSG = "You are a senior software engineer proficient in TypeScript, JavaScript, and Python. Based on the provided code, answer the user's questions in detail. Respond in Traditional Chinese."
 
 state = {
     "api_key": "",
     "model": "gemini-1.5-pro-latest",
     "temperature": 0.3,
-    "all_file_contents_prompt": None,
     "repo_url": "",
     "repo_url_options": [],
     "branch": "default",
     "file_extensions": [],
     "system_message": DEFAULT_SYS_MSG,
+    "diff_branch_1": "",
+    "diff_branch_2": "",
+    # follows will not be saved in state.json
+    "all_file_contents_prompt": None,
+    "diff_content_prompt": None,
+    "is_enable_diff": False,
 }
 
 
@@ -59,6 +62,7 @@ def save_state():
     with open(state_file_path, "w") as f:
         data = state.copy()
         del data["all_file_contents_prompt"]
+        del data["is_enable_diff"]
         f.write(json.dumps(data, indent=4))
 
 
@@ -89,10 +93,26 @@ def clone_repo_with_branch(repo_url, branch):
 
 def init_submodules():
     target_dir = os.path.join(PROJ_DIR, REPO_DIR)
-    subprocess.run(
-        ["git", "submodule", "update", "--init", "--depth", "1"], cwd=target_dir
-    )
+    repo = Repo(target_dir)
+    repo.git.submodule("update", "--init", "--depth", "1")
     print("Submodules initialized successfully!")
+
+
+def unshallow_repo():
+    target_dir = os.path.join(PROJ_DIR, REPO_DIR)
+    repo = Repo(target_dir)
+    repo.git.fetch("--unshallow")
+    print("Repo unshallowed successfully!")
+
+
+def fetch_branch(branch):
+    target_dir = os.path.join(PROJ_DIR, REPO_DIR)
+    repo = Repo(target_dir)
+    if repo.active_branch.name == branch:
+        repo.git.fetch()
+    else:
+        repo.git.fetch("origin", f"{branch}:{branch}")
+    print(f"Branch {branch} fetched successfully!")
 
 
 def combine_code_base_and_upload_to_gemini(file_extensions):
@@ -123,3 +143,20 @@ def combine_code_base_and_upload_to_gemini(file_extensions):
     )
     state["all_file_contents_prompt"] = all_file_contents_prompt
     print("Source code uploaded to Gemini successfully!")
+
+
+def prepare_diff_content_and_upload_to_gemini(branch_1, branch_2):
+    print("Preparing diff content and uploading to Gemini...")
+    target_dir = os.path.join(PROJ_DIR, REPO_DIR)
+
+    repo = Repo(target_dir)
+    diff_content = repo.git.diff("--no-prefix", branch_1, branch_2)
+
+    with open(os.path.join(target_dir, "diff_content.txt"), "w") as f:
+        f.write(diff_content)
+
+    diff_content_prompt = genai.upload_file(
+        os.path.join(target_dir, "diff_content.txt")
+    )
+    state["diff_content_prompt"] = diff_content_prompt
+    print("Diff content uploaded to Gemini successfully!")

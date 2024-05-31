@@ -7,6 +7,9 @@ from app.utils import (
     init_google_genai,
     state,
     update_state,
+    unshallow_repo,
+    prepare_diff_content_and_upload_to_gemini,
+    fetch_branch,
 )
 
 MODEL_OPTIONS = ["gemini-1.5-pro-latest", "gemini-1.5-flash-latest"]
@@ -17,6 +20,7 @@ FILE_EXTENSION_OPTIONS = ["py", "js", "ts", "tsx", "json"]
 def layout():
     _layout_model_setting()
     _layout_repo_setting()
+    _layout_diff_setting()
 
 
 def _layout_model_setting():
@@ -79,6 +83,44 @@ def _layout_repo_setting():
     )
 
 
+def _layout_diff_setting():
+    gr.Markdown("# Diff Setting")
+    is_enable = gr.Checkbox(label="Enable Diff", value=state["is_enable_diff"])
+
+    branch_1 = gr.Dropdown(
+        choices=BRANCH_OPTIONS,
+        allow_custom_value=True,
+        interactive=state["is_enable_diff"],
+        label="Select a Branch For Diff",
+        value=state["diff_branch_1"],
+    )
+
+    branch_2 = gr.Dropdown(
+        choices=BRANCH_OPTIONS,
+        allow_custom_value=True,
+        interactive=state["is_enable_diff"],
+        label="Select a Branch For Diff",
+        value=state["diff_branch_2"],
+    )
+
+    progress_text = gr.Markdown()
+    save_button = gr.Button(
+        "Save Diff Setting",
+        interactive=state["is_enable_diff"],
+    )
+
+    is_enable.change(
+        _on_change_enable_diff_handler,
+        [is_enable],
+        [branch_1, branch_2, save_button],
+    )
+    save_button.click(
+        _on_click_save_diff_handler,
+        [branch_1, branch_2],
+        [progress_text],
+    )
+
+
 def _on_click_model_settings(api_key, model, temperature, system_message):
     if not api_key:
         raise gr.Error("API Key is required!")
@@ -114,6 +156,35 @@ def _on_click_save_repo_handler(repo_url, branch, file_extensions):
     return "Done!"
 
 
+def _on_change_enable_diff_handler(is_enable):
+    update_state({"is_enable_diff": is_enable})
+    return (
+        gr.update(interactive=is_enable),
+        gr.update(interactive=is_enable),
+        gr.update(interactive=is_enable),
+    )
+
+
+def _on_click_save_diff_handler(branch_1, branch_2):
+    if not branch_1:
+        raise gr.Error("Branch 1 is required!")
+
+    if not branch_2:
+        raise gr.Error("Branch 2 is required!")
+
+    if not state["all_file_contents_prompt"]:
+        raise gr.Error("Please select a repository first.")
+
+    _update_diff_settings(branch_1, branch_2)
+
+    unshallow_repo()
+    fetch_branch(branch_1)
+    fetch_branch(branch_2)
+    prepare_diff_content_and_upload_to_gemini(branch_1, branch_2)
+
+    return "Done!"
+
+
 def _update_repo_settings(repo_url, branch, file_extensions):
     data = {
         "branch": branch,
@@ -126,4 +197,12 @@ def _update_repo_settings(repo_url, branch, file_extensions):
         if repo_url not in state["repo_url_options"]:
             state["repo_url_options"].append(repo_url)
 
+    update_state(data)
+
+
+def _update_diff_settings(branch_1, branch_2):
+    data = {
+        "diff_branch_1": branch_1,
+        "diff_branch_2": branch_2,
+    }
     update_state(data)
